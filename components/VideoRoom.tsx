@@ -49,8 +49,14 @@ export default function VideoRoom({ roomUrl }: VideoRoomProps) {
 
         callFrameRef.current = callFrame
 
-        // Listen for when user leaves the call
-        callFrame.on('left-meeting', () => {
+        // Listen for when user leaves the call - redirect immediately
+        callFrame.on('left-meeting', async () => {
+          // Destroy the frame immediately to prevent "you've left" screen
+          if (callFrameRef.current) {
+            callFrameRef.current.destroy()
+            callFrameRef.current = null
+          }
+          // Redirect to home
           router.push('/')
         })
 

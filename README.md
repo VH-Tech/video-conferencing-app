@@ -4,7 +4,7 @@ A modern video conferencing application built with Next.js, featuring Daily.co f
 
 ## Features
 
-- User authentication (signup/login) with Supabase
+- User authentication (email/password & Google OAuth) with Supabase
 - Create and join video conference rooms
 - Real-time video conferencing with Daily.co
 - Protected routes with middleware
@@ -40,10 +40,29 @@ npm install
 
 1. Go to [Supabase](https://app.supabase.com) and create a new project
 2. Once your project is ready, go to Settings > API
-3. Copy your project URL and anon/public key
-4. In your Supabase project, make sure you have email authentication enabled:
+3. Copy your project URL and publishable key
+4. Enable authentication providers:
    - Go to Authentication > Providers
-   - Enable Email provider
+   - Enable **Email** provider
+   - Enable **Google** provider:
+     - Click on Google provider
+     - Enable it
+     - Add your Google OAuth credentials (see step 2a below)
+     - In "Redirect URLs", add: `http://localhost:3000/auth/callback` (for development)
+
+#### 2a. Set Up Google OAuth
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create a new project or select an existing one
+3. Enable the Google+ API
+4. Go to "Credentials" > "Create Credentials" > "OAuth 2.0 Client ID"
+5. Configure the consent screen if you haven't already
+6. For Application type, choose "Web application"
+7. Add authorized redirect URIs:
+   - `https://<your-project-ref>.supabase.co/auth/v1/callback` (get this from Supabase)
+   - `http://localhost:3000/auth/callback` (for local development)
+8. Copy the Client ID and Client Secret
+9. Paste them into your Supabase Google provider settings
 
 ### 3. Set Up Daily.co
 
