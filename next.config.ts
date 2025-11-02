@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactStrictMode: false, // Disabled to prevent duplicate Daily.co iframe instances
 };
 
 export default nextConfig;

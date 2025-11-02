@@ -1,36 +1,178 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Video Conferencing App
 
-## Getting Started
+A modern video conferencing application built with Next.js, featuring Daily.co for video calls and Supabase for authentication.
 
-First, run the development server:
+## Features
+
+- User authentication (signup/login) with Supabase
+- Create and join video conference rooms
+- Real-time video conferencing with Daily.co
+- Protected routes with middleware
+- Responsive design with Tailwind CSS
+- TypeScript support
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Authentication**: Supabase
+- **Video**: Daily.co
+- **Styling**: Tailwind CSS
+- **Language**: TypeScript
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- Node.js 18+ installed
+- A Supabase account and project
+- A Daily.co account and domain
+
+## Setup Instructions
+
+### 1. Clone and Install
+
+```bash
+cd video-conferencing-app
+npm install
+```
+
+### 2. Set Up Supabase
+
+1. Go to [Supabase](https://app.supabase.com) and create a new project
+2. Once your project is ready, go to Settings > API
+3. Copy your project URL and anon/public key
+4. In your Supabase project, make sure you have email authentication enabled:
+   - Go to Authentication > Providers
+   - Enable Email provider
+
+### 3. Set Up Daily.co
+
+1. Go to [Daily.co](https://dashboard.daily.co) and sign up/login
+2. Create a new domain or use your existing domain
+3. Go to Developers > API Keys
+4. Create a new API key
+
+### 4. Configure Environment Variables
+
+Copy the `.env.example` file to `.env.local`:
+
+```bash
+cp .env.example .env.local
+```
+
+Then update `.env.local` with your actual credentials:
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Daily.co Configuration
+DAILY_API_KEY=your-daily-api-key
+NEXT_PUBLIC_DAILY_DOMAIN=your-daily-domain
+```
+
+### 5. Run the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Sign Up**: Create a new account at `/signup`
+2. **Login**: Sign in at `/login`
+3. **Create Room**: From the home page, create a new video room (with optional custom name)
+4. **Join Room**: Share the room URL with others to join the call
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+video-conferencing-app/
+├── app/
+│   ├── api/
+│   │   └── create-room/      # API route to create Daily.co rooms
+│   ├── login/                 # Login page
+│   ├── signup/                # Signup page
+│   ├── room/
+│   │   └── [roomName]/        # Dynamic room page
+│   └── page.tsx               # Home page
+├── components/
+│   └── VideoRoom.tsx          # Video conferencing component
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts          # Supabase client (browser)
+│   │   └── server.ts          # Supabase client (server)
+│   └── daily/
+│       └── config.ts          # Daily.co configuration
+├── middleware.ts              # Auth middleware for protected routes
+└── .env.local                 # Environment variables
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Key Features Explained
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Authentication Flow
 
-## Deploy on Vercel
+- Users must sign up/login to access the application
+- Middleware protects the `/room` routes
+- Session is maintained via Supabase cookies
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Video Conferencing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Daily.co rooms are created via API route
+- VideoRoom component handles the Daily.co iframe integration
+- Rooms support chat, screen sharing, and recording
+
+### Protected Routes
+
+- Middleware checks authentication status
+- Unauthenticated users are redirected to login
+- Authenticated users can't access login/signup pages
+
+## Environment Variables
+
+| Variable | Description | Where to Get It |
+|----------|-------------|-----------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Supabase Dashboard > Settings > API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key | Supabase Dashboard > Settings > API |
+| `DAILY_API_KEY` | Your Daily.co API key | Daily.co Dashboard > Developers > API Keys |
+| `NEXT_PUBLIC_DAILY_DOMAIN` | Your Daily.co domain name | Daily.co Dashboard > Domains |
+
+## Development
+
+### Building for Production
+
+```bash
+npm run build
+npm start
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## Troubleshooting
+
+### "Invalid API key" error
+- Make sure your `DAILY_API_KEY` is correct in `.env.local`
+- Restart your development server after changing environment variables
+
+### "Invalid Supabase credentials"
+- Verify your `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- Make sure email authentication is enabled in Supabase
+
+### Video not loading
+- Check that your `NEXT_PUBLIC_DAILY_DOMAIN` is correct
+- Ensure the room was created successfully (check browser console)
+
+## Contributing
+
+Feel free to submit issues and enhancement requests!
+
+## License
+
+MIT
