@@ -6,12 +6,13 @@ import { useRouter } from 'next/navigation'
 
 interface VideoRoomProps {
   roomUrl: string
+  meetingToken?: string | null
+  isOwner?: boolean
 }
 
-export default function VideoRoom({ roomUrl }: VideoRoomProps) {
+export default function VideoRoom({ roomUrl, meetingToken, isOwner = false }: VideoRoomProps) {
   const callFrameRef = useRef<DailyCall | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
@@ -27,16 +28,19 @@ export default function VideoRoom({ roomUrl }: VideoRoomProps) {
 
     const joinCall = async () => {
       try {
-        setIsJoining(true)
         setError(null)
+
+        console.log('Starting to join call with URL:', roomUrl)
 
         // Destroy any existing Daily instances before creating a new one
         const existingFrames = DailyIframe.getCallInstance()
         if (existingFrames) {
+          console.log('Destroying existing frame')
           existingFrames.destroy()
         }
 
         // Create the Daily call frame
+        console.log('Creating Daily call frame')
         const callFrame = DailyIframe.createFrame(containerRef.current!, {
           showLeaveButton: true,
           iframeStyle: {
@@ -48,6 +52,7 @@ export default function VideoRoom({ roomUrl }: VideoRoomProps) {
         })
 
         callFrameRef.current = callFrame
+        console.log('Call frame created successfully')
 
         // Listen for when user leaves the call - redirect immediately
         callFrame.on('left-meeting', async () => {
@@ -60,16 +65,45 @@ export default function VideoRoom({ roomUrl }: VideoRoomProps) {
           router.push('/')
         })
 
+        // Listen for transcription lifecycle events (for logging only)
+        callFrame.on('transcription-started', () => {
+          console.log('Transcription started successfully')
+        })
+
+        callFrame.on('transcription-stopped', () => {
+          console.log('Transcription stopped')
+        })
+
+        callFrame.on('transcription-error', (event) => {
+          console.error('Transcription error:', event)
+        })
+
         // Join the call only if component is still mounted
         if (mounted) {
-          await callFrame.join({ url: roomUrl })
-          setIsJoining(false)
+          console.log('Attempting to join call...')
+          const joinOptions = meetingToken
+            ? { url: roomUrl, token: meetingToken }
+            : { url: roomUrl }
+          await callFrame.join(joinOptions)
+          console.log('Successfully joined call!')
+
+          // Auto-start transcription after joining (only if owner)
+          if (isOwner) {
+            try {
+              console.log('Starting transcription automatically (owner)...')
+              await callFrame.startTranscription()
+            } catch (err) {
+              console.error('Failed to auto-start transcription:', err)
+              // Don't set error state, just log it - transcription is optional
+            }
+          } else {
+            console.log('Not starting transcription - user is not room owner')
+          }
         }
       } catch (err) {
         console.error('Error joining call:', err)
         if (mounted) {
-          setError('Failed to join the call. Please try again.')
-          setIsJoining(false)
+          setError(`Failed to join the call: ${err instanceof Error ? err.message : 'Unknown error'}`)
         }
       }
     }
@@ -84,7 +118,7 @@ export default function VideoRoom({ roomUrl }: VideoRoomProps) {
         callFrameRef.current = null
       }
     }
-  }, [roomUrl])
+  }, [roomUrl, meetingToken, isOwner, router])
 
   if (error) {
     return (
@@ -92,17 +126,6 @@ export default function VideoRoom({ roomUrl }: VideoRoomProps) {
         <div className="text-red-500 text-center">
           <p className="text-xl font-semibold mb-2">Error</p>
           <p>{error}</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (isJoining) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Joining call...</p>
         </div>
       </div>
     )

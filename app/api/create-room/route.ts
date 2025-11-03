@@ -29,6 +29,7 @@ export async function POST(request: Request) {
           enable_chat: true,
           enable_screenshare: true,
           enable_recording: 'cloud',
+          enable_transcription: true,
           enable_advanced_chat: true,
           enable_emoji_reactions: true,
           enable_hand_raising: true,
@@ -50,6 +51,19 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       return NextResponse.json({ error: room.error }, { status: response.status })
+    }
+
+    // Store room in Supabase with creator info
+    const { error: dbError } = await supabase
+      .from('rooms')
+      .insert({
+        room_name: room.name,
+        creator_id: user.id,
+      })
+
+    if (dbError) {
+      console.error('Error storing room in database:', dbError)
+      // Don't fail the request if DB insert fails, room is still created in Daily
     }
 
     return NextResponse.json({ room })
