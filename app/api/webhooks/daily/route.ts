@@ -125,8 +125,6 @@ export async function POST(request: Request) {
             speaker_insights: summary?.speaker_insights || null,
             questions_raised: summary?.questions_raised || null,
             open_questions: summary?.open_questions || null,
-            participants: summary?.participants || null,
-            transcript_language: summary?.transcript_language || null,
           },
           {
             onConflict: 'transcript_id',

@@ -12,8 +12,6 @@ export interface MeetingSummary {
   speaker_insights?: string[]
   questions_raised: string[]
   open_questions: string[]
-  participants?: string
-  transcript_language: string
 }
 
 export async function generateMeetingSummary(
