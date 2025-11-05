@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { generateMeetingSummary, parseWebVTTToText } from '@/lib/gemini/summarize'
 
 export async function POST(request: Request) {
   try {
@@ -82,6 +83,23 @@ export async function POST(request: Request) {
       // Duration is already in seconds from the webhook payload
       const durationInSeconds = duration ? Math.round(duration) : null
 
+      // Generate AI summary if we have transcript content
+      let summary = null
+      if (transcriptContent) {
+        console.log('Generating AI summary for transcript...')
+        try {
+          const transcriptText = parseWebVTTToText(transcriptContent)
+          summary = await generateMeetingSummary(transcriptText)
+          if (summary) {
+            console.log('Successfully generated AI summary')
+          } else {
+            console.log('Failed to generate AI summary')
+          }
+        } catch (error) {
+          console.error('Error generating summary:', error)
+        }
+      }
+
       // Save transcript metadata and content to Supabase using service role client
       // (bypasses RLS since webhooks don't have user authentication)
       // Use upsert to handle cases where transcript already exists
@@ -97,6 +115,18 @@ export async function POST(request: Request) {
             duration: durationInSeconds ? `${durationInSeconds} seconds` : null,
             status: 'finished',
             content: transcriptContent,
+            // AI-generated summary fields
+            title: summary?.title || null,
+            description: summary?.description || null,
+            executive_summary: summary?.executive_summary || null,
+            key_points: summary?.key_points || null,
+            important_numbers: summary?.important_numbers || null,
+            action_items: summary?.action_items || null,
+            speaker_insights: summary?.speaker_insights || null,
+            questions_raised: summary?.questions_raised || null,
+            open_questions: summary?.open_questions || null,
+            participants: summary?.participants || null,
+            transcript_language: summary?.transcript_language || null,
           },
           {
             onConflict: 'transcript_id',

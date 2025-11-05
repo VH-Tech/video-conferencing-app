@@ -5,12 +5,17 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 interface Transcript {
-  transcriptId: string
-  roomName: string
+  id: string
+  transcript_id: string
+  room_name: string
+  meeting_date: string
   duration: number
   status: string
-  mtgSessionId: string
-  isVttAvailable: boolean
+  created_at: string
+  updated_at: string
+  title?: string
+  description?: string
+  executive_summary?: string
 }
 
 export default function TranscriptsPage() {
@@ -57,9 +62,11 @@ export default function TranscriptsPage() {
   }
 
   const formatDuration = (seconds: number) => {
+    if (!seconds) return 'N/A'
+    
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
+    const secs = Math.floor(seconds % 60)
 
     if (hours > 0) {
       return `${hours}h ${minutes}m ${secs}s`
@@ -73,8 +80,11 @@ export default function TranscriptsPage() {
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
       t_finished: 'bg-green-100 text-green-800',
+      finished: 'bg-green-100 text-green-800',
       t_processing: 'bg-yellow-100 text-yellow-800',
+      processing: 'bg-yellow-100 text-yellow-800',
       t_error: 'bg-red-100 text-red-800',
+      error: 'bg-red-100 text-red-800',
     }
 
     const color = statusColors[status] || 'bg-gray-100 text-gray-800'
@@ -118,7 +128,7 @@ export default function TranscriptsPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Meeting Transcripts</h1>
               <p className="mt-2 text-gray-600">
-                View and download transcripts from your past meetings
+                View briefings and transcripts from your past meetings
               </p>
             </div>
             <Link
@@ -152,63 +162,40 @@ export default function TranscriptsPage() {
             </p>
           </div>
         ) : (
-          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-            <ul className="divide-y divide-gray-200">
-              {transcripts.map((transcript) => (
-                <li
-                  key={transcript.transcriptId}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <Link
-                    href={`/transcripts/${transcript.transcriptId}`}
-                    className="block px-6 py-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {transcript.roomName}
-                          </h3>
-                          {getStatusBadge(transcript.status)}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span className="flex items-center gap-1">
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                            {transcript.mtgSessionId.substring(0, 8)}...</span>
-                          {transcript.duration > 0 && (
-                            <span className="flex items-center gap-1">
-                              <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
-                              {formatDuration(transcript.duration)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {transcripts.map((transcript) => (
+              <Link
+                key={transcript.id}
+                href={`/transcripts/${transcript.transcript_id}`}
+                className="block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                      {transcript.title || transcript.room_name}
+                    </h3>
+                    {getStatusBadge(transcript.status)}
+                  </div>
+                  
+                  {transcript.description && (
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      {transcript.description}
+                    </p>
+                  )}
+                  
+                  {transcript.executive_summary && (
+                    <div className="mb-3 p-3 bg-blue-50 rounded-md">
+                      <p className="text-xs font-semibold text-blue-900 mb-1">Executive Summary</p>
+                      <p className="text-sm text-blue-800 line-clamp-3">
+                        {transcript.executive_summary}
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-4 text-xs text-gray-500 mt-4 pt-4 border-t border-gray-100">
+                    <span className="flex items-center gap-1">
                       <svg
-                        className="h-5 w-5 text-gray-400"
+                        className="h-4 w-4"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -217,14 +204,33 @@ export default function TranscriptsPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M9 5l7 7-7 7"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                       </svg>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                      {formatDate(transcript.meeting_date || transcript.created_at)}
+                    </span>
+                    {transcript.duration > 0 && (
+                      <span className="flex items-center gap-1">
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        {formatDuration(transcript.duration)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </div>

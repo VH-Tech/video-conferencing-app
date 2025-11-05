@@ -19,110 +19,34 @@ export async function GET(
   try {
     const { id } = await params
 
-    // First, try to get transcript from our database (faster and includes content)
-    const { data: dbTranscript } = await supabase
+    // Fetch transcript from our database with all briefing fields
+    const { data: dbTranscript, error: transcriptError } = await supabase
       .from('transcripts')
       .select('*')
       .eq('transcript_id', id)
       .single()
 
-    if (dbTranscript) {
-      // Check if user owns this room
-      const { data: room } = await supabase
-        .from('rooms')
-        .select('creator_id')
-        .eq('room_name', dbTranscript.room_name)
-        .single()
-
-      if (room && room.creator_id !== user.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-      }
-
-      // If we have the content stored, return it directly
-      if (dbTranscript.content) {
-        return NextResponse.json({
-          transcript: {
-            transcriptId: dbTranscript.transcript_id,
-            roomName: dbTranscript.room_name,
-            status: dbTranscript.status,
-          },
-          downloadLink: null, // Not needed since we have content
-          vttContent: dbTranscript.content,
-        })
-      }
-    }
-
-    // Fallback: Fetch from Daily.co if not in database or content is missing
-    const infoResponse = await fetch(`https://api.daily.co/v1/transcript/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.DAILY_API_KEY}`,
-      },
-    })
-
-    if (!infoResponse.ok) {
-      const error = await infoResponse.json()
-      console.error('Error fetching transcript info:', error)
+    if (transcriptError) {
+      console.error('Error fetching transcript:', transcriptError)
       return NextResponse.json(
-        { error: 'Failed to fetch transcript' },
-        { status: infoResponse.status }
+        { error: 'Transcript not found' },
+        { status: 404 }
       )
     }
-
-    const transcriptInfo = await infoResponse.json()
 
     // Check if user owns this room
     const { data: room } = await supabase
       .from('rooms')
       .select('creator_id')
-      .eq('room_name', transcriptInfo.roomName)
+      .eq('room_name', dbTranscript.room_name)
       .single()
 
     if (room && room.creator_id !== user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // Fetch the download link
-    const linkResponse = await fetch(
-      `https://api.daily.co/v1/transcript/${id}/access-link`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.DAILY_API_KEY}`,
-        },
-      }
-    )
-
-    if (!linkResponse.ok) {
-      const error = await linkResponse.json()
-      console.error('Error fetching transcript link:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch transcript link' },
-        { status: linkResponse.status }
-      )
-    }
-
-    const linkData = await linkResponse.json()
-
-    // Fetch the actual WebVTT content
-    let vttContent = null
-    if (linkData.link) {
-      try {
-        const vttResponse = await fetch(linkData.link)
-        if (vttResponse.ok) {
-          vttContent = await vttResponse.text()
-        }
-      } catch (error) {
-        console.error('Error fetching VTT content:', error)
-      }
-    }
-
     return NextResponse.json({
-      transcript: transcriptInfo,
-      downloadLink: linkData.link,
-      vttContent,
+      transcript: dbTranscript
     })
   } catch (error) {
     console.error('Error fetching transcript:', error)

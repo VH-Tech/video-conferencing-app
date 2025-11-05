@@ -27,32 +27,26 @@ export async function GET() {
 
     const roomNames = userRooms?.map((r) => r.room_name) || []
 
-    // Fetch all transcripts from Daily.co
-    const response = await fetch('https://api.daily.co/v1/transcript', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.DAILY_API_KEY}`,
-      },
-    })
+    if (roomNames.length === 0) {
+      return NextResponse.json({ transcripts: [] })
+    }
 
-    if (!response.ok) {
-      const error = await response.json()
-      console.error('Error fetching transcripts from Daily:', error)
+    // Fetch transcripts from Supabase database
+    const { data: transcripts, error: transcriptsError } = await supabase
+      .from('transcripts')
+      .select('id, transcript_id, room_name, meeting_date, duration, status, created_at, updated_at, title, description, executive_summary')
+      .in('room_name', roomNames)
+      .order('created_at', { ascending: false })
+
+    if (transcriptsError) {
+      console.error('Error fetching transcripts:', transcriptsError)
       return NextResponse.json(
         { error: 'Failed to fetch transcripts' },
-        { status: response.status }
+        { status: 500 }
       )
     }
 
-    const data = await response.json()
-
-    // Filter transcripts to only include user's rooms
-    const userTranscripts = data.data?.filter((transcript: any) =>
-      roomNames.includes(transcript.roomName)
-    ) || []
-
-    return NextResponse.json({ transcripts: userTranscripts })
+    return NextResponse.json({ transcripts: transcripts || [] })
   } catch (error) {
     console.error('Error fetching transcripts:', error)
     return NextResponse.json(
