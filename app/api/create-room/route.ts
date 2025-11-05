@@ -30,6 +30,7 @@ export async function POST(request: Request) {
           enable_screenshare: true,
           enable_recording: 'cloud',
           enable_transcription: true,
+          enable_transcription_storage: true,
           enable_advanced_chat: true,
           enable_emoji_reactions: true,
           enable_hand_raising: true,

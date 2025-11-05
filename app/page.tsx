@@ -118,6 +118,12 @@ export default function Home() {
               Video Conferencing
             </h1>
             <div className="flex items-center gap-4">
+              <Link
+                href="/transcripts"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View Transcripts
+              </Link>
               <span className="text-sm text-gray-600">{user.email}</span>
               <button
                 onClick={handleSignOut}
