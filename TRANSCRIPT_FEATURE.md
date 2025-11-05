@@ -82,12 +82,22 @@ No additional Daily.co configuration needed! The code already:
    - Daily.co finalizes the transcript
    - Status changes to "finished"
    - WebVTT file becomes available
+   - **Webhook automatically saves metadata** to Supabase (if configured)
 
 4. **Viewing Transcripts:**
    - App fetches transcript list from Daily.co API
    - Filters to show only user's rooms
    - Downloads and parses WebVTT files for display
    - Provides export options
+
+## Automatic Transcript Tracking (Webhook)
+
+A webhook endpoint at `/api/webhooks/daily` listens for `meeting.ended` events from Daily.co:
+- Automatically fetches transcript data when meeting ends
+- Saves metadata to Supabase `transcripts` table
+- No manual intervention required
+
+**Setup Required**: See [WEBHOOK_SETUP.md](WEBHOOK_SETUP.md) for configuration instructions.
 
 ## API Flow
 

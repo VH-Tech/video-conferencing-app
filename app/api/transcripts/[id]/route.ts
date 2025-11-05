@@ -19,7 +19,40 @@ export async function GET(
   try {
     const { id } = await params
 
-    // Fetch transcript info from Daily.co
+    // First, try to get transcript from our database (faster and includes content)
+    const { data: dbTranscript } = await supabase
+      .from('transcripts')
+      .select('*')
+      .eq('transcript_id', id)
+      .single()
+
+    if (dbTranscript) {
+      // Check if user owns this room
+      const { data: room } = await supabase
+        .from('rooms')
+        .select('creator_id')
+        .eq('room_name', dbTranscript.room_name)
+        .single()
+
+      if (room && room.creator_id !== user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+
+      // If we have the content stored, return it directly
+      if (dbTranscript.content) {
+        return NextResponse.json({
+          transcript: {
+            transcriptId: dbTranscript.transcript_id,
+            roomName: dbTranscript.room_name,
+            status: dbTranscript.status,
+          },
+          downloadLink: null, // Not needed since we have content
+          vttContent: dbTranscript.content,
+        })
+      }
+    }
+
+    // Fallback: Fetch from Daily.co if not in database or content is missing
     const infoResponse = await fetch(`https://api.daily.co/v1/transcript/${id}`, {
       method: 'GET',
       headers: {
